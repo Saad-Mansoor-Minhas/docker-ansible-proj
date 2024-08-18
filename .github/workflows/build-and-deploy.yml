@@ -37,23 +37,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
-
-      - name: Pull Docker image from Docker Hub
+      - name: Install Ansible
         run: |
-          docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/my-python-app:latest
+          sudo apt update
+          sudo apt install -y ansible
 
-      - name: Deploy to EC2
-        uses: ansible/ansible-runner-action@v1
-        with:
-          playbook: deploy_docker_nginx.yml
-          inventory: hosts
+      - name: Set up environment variables
         env:
-          ANSIBLE_HOST_KEY_CHECKING: 'false'
-          ANSIBLE_PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          DOCKER_IMAGE_NAME: ${{ secrets.DOCKER_HUB_USERNAME }}/my-python-app:latest
-          EC2_IP_ADDRESS: ${{ secrets.EC2_IP_ADDRESS }}
+          ANSIBLE_HOST_KEY_CHECKING: False
+        run: |
+          echo "ANSIBLE_HOST_KEY_CHECKING=False" >> $GITHUB_ENV
+          echo "DOCKER_IMAGE_NAME=${{ secrets.DOCKER_HUB_USERNAME }}/my-python-app:latest" >> $GITHUB_ENV
+
+      - name: Run Ansible Playbook
+        run: |
+          ansible-playbook -i hosts deploy_web_server.yml --private-key ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: False
