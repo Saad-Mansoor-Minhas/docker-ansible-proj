@@ -26,9 +26,9 @@ jobs:
       - name: Build and push docker image
         uses: docker/build-push-action@v6
         with:
-            constext: .
-            push: true
-            tags: ${{ secrets.DOCKER_HUB_USERNAME }}/my-python-app:latest
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/my-python-app:latest
 
   deploy:
     runs-on: ubuntu-latest
@@ -55,4 +55,4 @@ jobs:
         env:
           ANSIBLE_HOST_KEY_CHECKING: 'false'
           ANSIBLE_PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          DOCKER_IMAGE_NAME: ${{ secrets.DOCKER_IMAGE_NAME }}
+          DOCKER_IMAGE_NAME: ${{ secrets.DOCKER_HUB_USERNAME }}/my-python-app:latest
