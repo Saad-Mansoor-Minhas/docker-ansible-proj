@@ -1,0 +1,79 @@
+---
+- name: Deploy Docker Container with Nginx
+  hosts: all
+  become: yes
+  tasks:
+    - name: Ensure Docker is installed
+      apt:
+        name: docker.io
+        state: present
+      tags:
+        - docker
+
+    - name: Ensure Docker is running
+      service:
+        name: docker
+        state: started
+        enabled: yes
+      tags:
+        - docker
+
+    - name: Pull Docker image from Docker Hub
+      docker_image:
+        name: "{{ docker_image_name }}"
+        source: pull
+        tag: latest
+      tags:
+        - docker
+
+    - name: Ensure Nginx is installed
+      apt:
+        name: nginx
+        state: present
+      tags:
+        - nginx
+
+    - name: Ensure Nginx is running
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+      tags:
+        - nginx
+
+    - name: Create Nginx configuration file
+      copy:
+        dest: /etc/nginx/sites-available/default
+        content: |
+          server {
+              listen 80;
+              location / {
+                  proxy_pass http://localhost:5000;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+              }
+          }
+      notify: Restart Nginx
+      tags:
+        - nginx
+
+    - name: Run Docker container
+      docker_container:
+        name: my-python-app
+        image: "{{ docker_image_name }}:latest"
+        state: started
+        restart_policy: always
+        ports:
+          - "5000:5000"
+      tags:
+        - docker
+
+  handlers:
+    - name: Restart Nginx
+      service:
+        name: nginx
+        state: restarted
+      tags:
+        - nginx

@@ -1,0 +1,2 @@
+[worker]
+34.228.210.26 ansible_ssh_user=ubuntu ansible_ssh_private_key_file=project.pem
