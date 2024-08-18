@@ -23,12 +23,12 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
 
-      - name: Build and push docker image
+      - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          tags: saadr8840/my-python-app:latest
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/my-python-app:latest
 
   deploy:
     runs-on: ubuntu-latest
@@ -48,7 +48,7 @@ jobs:
           docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/my-python-app:latest
 
       - name: Deploy to EC2
-        uses: appleboy/ansible-action@v2
+        uses: ansible/ansible-runner-action@v1
         with:
           playbook: deploy_docker_nginx.yml
           inventory: hosts
@@ -56,3 +56,4 @@ jobs:
           ANSIBLE_HOST_KEY_CHECKING: 'false'
           ANSIBLE_PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           DOCKER_IMAGE_NAME: ${{ secrets.DOCKER_HUB_USERNAME }}/my-python-app:latest
+          EC2_IP_ADDRESS: ${{ secrets.EC2_IP_ADDRESS }}
