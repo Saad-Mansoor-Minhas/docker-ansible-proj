@@ -47,7 +47,7 @@ jobs:
           ANSIBLE_HOST_KEY_CHECKING: False
         run: |
           echo "ANSIBLE_HOST_KEY_CHECKING=False" >> $GITHUB_ENV
-          echo "DOCKER_IMAGE_NAME=${{ secrets.DOCKER_HUB_USERNAME }}/my-python-app:latest" >> $GITHUB_ENV
+          echo "DOCKER_IMAGE_NAME=saadr8840/my-python-app:latest" >> $GITHUB_ENV
 
       - name: Run Ansible Playbook
         run: |
