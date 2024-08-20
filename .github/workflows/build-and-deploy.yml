@@ -72,9 +72,10 @@ jobs:
       
       - name: Run Ansible Playbook
         run: |
-          ansible-playbook -i ansible/hosts ansible/deploy_docker_nginx.yml
+            ansible-playbook -i ansible/hosts ansible/deploy_docker_nginx.yml
         env:
-          ANSIBLE_HOST_KEY_CHECKING: False
+           ANSIBLE_HOST_KEY_CHECKING: False
+           DOCKER_IMAGE_NAME: saadr8840/my-python-app:latest
 
       - name: Remove GitHub Actions IP from Security Group
         if: always()
