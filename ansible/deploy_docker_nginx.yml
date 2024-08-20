@@ -46,7 +46,9 @@
         dest: /etc/nginx/sites-available/default
         content: |
           server {
-              listen 80;
+              listen 80 default_server;
+              listen [::]:80 default_server;
+              server_name 54.243.11.78;
               location / {
                   proxy_pass http://localhost:5000;
                   proxy_set_header Host $host;
@@ -65,8 +67,48 @@
         image: "{{ lookup('env', 'DOCKER_IMAGE_NAME') }}"
         state: started
         restart_policy: always
-        ports:
-          - "5000:5000"
+        network_mode: host
+      tags:
+        - docker
+
+    - name: Check Nginx status
+      command: systemctl status nginx
+      register: nginx_status
+      changed_when: false
+      tags:
+        - nginx
+
+    - name: Display Nginx status
+      debug:
+        var: nginx_status.stdout_lines
+      tags:
+        - nginx
+
+    - name: Check Docker container status
+      docker_container_info:
+        name: my-python-app
+      register: container_info
+      tags:
+        - docker
+
+    - name: Display Docker container status
+      debug:
+        var: container_info
+      tags:
+        - docker
+
+    - name: Check if application is responding locally
+      uri:
+        url: http://localhost:5000
+        return_content: yes
+      register: app_response
+      ignore_errors: yes
+      tags:
+        - docker
+
+    - name: Display application response
+      debug:
+        var: app_response
       tags:
         - docker
 
