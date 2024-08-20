@@ -1,56 +1,86 @@
 name: Build, Push, and Deploy Docker Image
-
 on:
   push:
     branches:
       - master
-
 jobs:
   build_and_push:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
-
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
           tags: saadr8840/my-python-app:latest
-
   deploy:
     runs-on: ubuntu-latest
     needs: build_and_push
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: your-aws-region
+
+      - name: Get GitHub Actions IP
+        id: ip
+        uses: haythem/public-ip@v1.2
+
+      - name: Add GitHub Actions IP to Security Group
+        run: |
+          aws ec2 authorize-security-group-ingress \
+            --group-id ${{ secrets.EC2_SECURITY_GROUP_ID }} \
+            --protocol tcp \
+            --port 22 \
+            --cidr ${{ steps.ip.outputs.ipv4 }}/32
 
       - name: Install Ansible
         run: |
           sudo apt update
           sudo apt install -y ansible
-
+      
+      - name: Set up SSH key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+      
       - name: Set up environment variables
         env:
           ANSIBLE_HOST_KEY_CHECKING: False
         run: |
           echo "ANSIBLE_HOST_KEY_CHECKING=False" >> $GITHUB_ENV
           echo "DOCKER_IMAGE_NAME=saadr8840/my-python-app:latest" >> $GITHUB_ENV
-
+      
       - name: Run Ansible Playbook
         run: |
-          ansible-playbook -i hosts ansible/deploy_docker_nginx.yml
+          ansible-playbook -i ansible/hosts ansible/deploy_docker_nginx.yml
         env:
           ANSIBLE_HOST_KEY_CHECKING: False
+
+      - name: Remove GitHub Actions IP from Security Group
+        if: always()
+        run: |
+          aws ec2 revoke-security-group-ingress \
+            --group-id ${{ secrets.EC2_SECURITY_GROUP_ID }} \
+            --protocol tcp \
+            --port 22 \
+            --cidr ${{ steps.ip.outputs.ipv4 }}/32
