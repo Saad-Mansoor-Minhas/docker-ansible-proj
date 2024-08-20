@@ -20,7 +20,7 @@
 
     - name: Pull Docker image from Docker Hub
       docker_image:
-        name: "{{ docker_image_name }}"
+        name: ""{{ lookup('env', 'DOCKER_IMAGE_NAME') }}""
         source: pull
         tag: latest
       tags:
@@ -62,7 +62,7 @@
     - name: Run Docker container
       docker_container:
         name: my-python-app
-        image: "{{ docker_image_name }}:latest"
+        image: ""{{ lookup('env', 'DOCKER_IMAGE_NAME') }}""
         state: started
         restart_policy: always
         ports:
