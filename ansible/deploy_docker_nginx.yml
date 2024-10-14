@@ -48,7 +48,7 @@
           server {
               listen 80 default_server;
               listen [::]:80 default_server;
-              server_name 54.243.11.78;
+              server_name 54.224.98.40;
               location / {
                   proxy_pass http://localhost:5000;
                   proxy_set_header Host $host;
